@@ -17,8 +17,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-const version = "1.0.0"
-
 // Config holds the configuration for the code collector
 type Config struct {
 	IncludeExtensions []string `yaml:"include_extensions"`
@@ -48,6 +46,8 @@ var (
 	globalIgnoreRules []IgnoreRule
 	rootCmd           = &cobra.Command{Use: "codecollector"}
 )
+
+var version string // This will be set by the linker at build time
 
 func main() {
 	log.SetOutput(os.Stdout)
