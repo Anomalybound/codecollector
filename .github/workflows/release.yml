@@ -83,6 +83,8 @@ jobs:
 
       - name: Download artifacts
         uses: actions/download-artifact@v3
+        with:
+          path: ./artifacts
 
       - name: Create Release
         env:
@@ -90,13 +92,18 @@ jobs:
         run: |
           gh release create v${{ steps.get_version.outputs.VERSION }} \
             --title "Release ${{ steps.get_version.outputs.VERSION }}" \
-            --notes "${{ steps.release_notes.outputs.NOTES }}" \
-            codecollector-*
+            --notes "${{ steps.release_notes.outputs.NOTES }}"
 
       - name: Upload Release Assets
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          for file in codecollector-*; do
-            gh release upload v${{ steps.get_version.outputs.VERSION }} "$file" --clobber
+          for dir in ./artifacts/*; do
+            if [ -d "$dir" ]; then
+              for file in "$dir"/*; do
+                if [ -f "$file" ]; then
+                  gh release upload v${{ steps.get_version.outputs.VERSION }} "$file" --clobber
+                fi
+              done
+            fi
           done
