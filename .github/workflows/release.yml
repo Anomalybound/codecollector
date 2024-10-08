@@ -7,8 +7,11 @@ on:
 
 jobs:
   build:
-    name: Build and Release
+    name: Build
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     strategy:
       matrix:
         include:
@@ -55,6 +58,9 @@ jobs:
     name: Create Release
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -75,28 +81,22 @@ jobs:
           echo "$NOTES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ steps.get_version.outputs.VERSION }}
-          release_name: Release ${{ steps.get_version.outputs.VERSION }}
-          body: |
-            ${{ steps.release_notes.outputs.NOTES }}
-            
-            For full details, see the [CHANGELOG](https://github.com/Anomalybound/codecollector/blob/main/CHANGELOG.md)
-          draft: false
-          prerelease: false
-
       - name: Download artifacts
         uses: actions/download-artifact@v3
+
+      - name: Create Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create v${{ steps.get_version.outputs.VERSION }} \
+            --title "Release ${{ steps.get_version.outputs.VERSION }}" \
+            --notes "${{ steps.release_notes.outputs.NOTES }}" \
+            codecollector-*
 
       - name: Upload Release Assets
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           for file in codecollector-*; do
-            gh release upload v${{ steps.get_version.outputs.VERSION }} "$file"
+            gh release upload v${{ steps.get_version.outputs.VERSION }} "$file" --clobber
           done
